@@ -66,3 +66,24 @@
 
 ### Exit condition (success)
 - User can immediately start practicing without decision fatigue
+
+## Shared rules (applies to all flows)
+
+### Session save rules
+- A session is created when the user taps "Stop practice"
+- Duration is calculated server-side from start/stop timestamps
+- Note is optional and never required
+
+### Failure states (V1)
+- If saving fails (offline/network error):
+  - UI shows a non-blocking error message
+  - UI offers "Retry save" and keeps the note in memory until saved
+- If the user leaves the page during an active session:
+  - Timer stops (V1) and no session is saved unless user explicitly stops
+  - (Future improvement: persist active timer state locally)
+- If duration is extremely short (e.g., < 5 seconds):
+  - UI may warn or allow saving anyway (decision: allow saving in V1)
+
+### Week boundaries (V1)
+- Weekly summary uses Europe timezone boundaries (documented)
+- Week starts on Monday
