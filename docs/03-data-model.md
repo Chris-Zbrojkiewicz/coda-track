@@ -1,4 +1,4 @@
-# Data Model — V1 (Coda-Track)
+# Data Model — V1 (CodaTrack)
 
 ## Goals of the data model
 - Store practice activity as durable, auditable events (sessions)
