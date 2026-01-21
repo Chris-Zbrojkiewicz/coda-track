@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { auth } from "@/auth";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard" },
@@ -8,7 +9,11 @@ const navItems = [
   { href: "/settings", label: "Settings" },
 ];
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+export default async function AppLayout({ children }: { children: React.ReactNode }) {
+
+  const session = await auth();
+  const user = session?.user;
+
   return (
     <div style={styles.shell}>
       <aside style={styles.sidebar}>
@@ -28,13 +33,27 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           ))}
         </nav>
 
-        <div style={styles.footer}>
-          <div style={styles.userAvatar} aria-hidden />
-          <div>
-            <div style={styles.userName}>Guest</div>
-            <div style={styles.userPlan}>V1</div>
-          </div>
+            <div style={styles.footer}>
+        <div style={styles.userAvatar}>
+          {user?.image ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={user.image}
+              alt=""
+              style={{ width: "100%", height: "100%", borderRadius: 999 }}
+            />
+          ) : null}
         </div>
+
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={styles.userName}>{user?.name ?? "User"}</div>
+          <div style={styles.userPlan}>{user?.email ?? "Signed in"}</div>
+        </div>
+
+      <a href="/api/auth/signout?callbackUrl=/signin" style={styles.signOutLink}>
+        Sign out
+      </a>
+      </div>
       </aside>
 
       <main style={styles.main}>
@@ -97,9 +116,21 @@ const styles: Record<string, React.CSSProperties> = {
     height: 32,
     borderRadius: 999,
     background: "rgba(255,255,255,0.1)",
+    overflow: "hidden",
+    flexShrink: 0,
   },
   userName: { fontSize: 13, fontWeight: 600 },
   userPlan: { fontSize: 12, opacity: 0.7 },
   main: { padding: 24 },
-  container: { maxWidth: 1200, margin: "0 auto" },
+  container: { maxWidth: 1200, margin: "0 auto" 
+  },
+  signOutLink: {
+  padding: "8px 10px",
+  borderRadius: 10,
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "rgba(255,255,255,0.04)",
+  color: "inherit",
+  textDecoration: "none",
+  whiteSpace: "nowrap",
+  },
 };
