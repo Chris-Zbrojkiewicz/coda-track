@@ -1,10 +1,17 @@
+import { Page } from "@/components/ui/page";
+
 export default function DashboardPage() {
   return (
-    <div>
-      <h1 style={{ fontSize: 32, fontWeight: 800 }}>Dashboard</h1>
-      <p style={{ opacity: 0.75, marginTop: 8 }}>
-        Placeholder dashboard. Will show streak, weekly summary, and recent sessions.
-      </p>
-    </div>
+    <Page
+      title="Dashboard"
+      description="Your practice overview for the week."
+      right={<div className="text-sm text-muted-foreground">Schedule</div>}
+    >
+      <div className="grid gap-6 md:grid-cols-3">
+        <div className="rounded-2xl border bg-card p-6">Up next</div>
+        <div className="rounded-2xl border bg-card p-6">Current streak</div>
+        <div className="rounded-2xl border bg-card p-6">This week</div>
+      </div>
+    </Page>
   );
 }

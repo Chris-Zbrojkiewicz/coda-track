@@ -15,7 +15,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const user = session?.user;
 
   return (
-    <div style={styles.shell}>
+    <div style={styles.shell} className="bg-background text-foreground">
       <aside style={styles.sidebar}>
         <div style={styles.brand}>
           <div style={styles.logo} aria-hidden />
@@ -50,9 +50,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <div style={styles.userPlan}>{user?.email ?? "Signed in"}</div>
         </div>
 
-      <a href="/api/auth/signout?callbackUrl=/signin" style={styles.signOutLink}>
+      <Link href="/api/auth/signout?callbackUrl=/signin" style={styles.signOutLink}>
         Sign out
-      </a>
+      </Link>
       </div>
       </aside>
 
@@ -68,7 +68,6 @@ const styles: Record<string, React.CSSProperties> = {
     minHeight: "100vh",
     display: "grid",
     gridTemplateColumns: "280px 1fr",
-    background: "#0b1220",
     color: "#e5e7eb",
   },
   sidebar: {
