@@ -1,6 +1,6 @@
-# Coda-Track (working name)
+# CodaTrack (working name)
 
-Coda-Track is a guitar practice tracker focused on building consistency through fast session logging and clear progress visibility. The V1 prioritizes minimal friction (timer + optional note), weekly summaries, and streak tracking.
+CodaTrack is a guitar practice tracker focused on building consistency through fast session logging and clear progress visibility. The V1 prioritizes minimal friction (timer + optional note), weekly summaries, and streak tracking.
 
 ## Status
 - In active development (V1)
