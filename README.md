@@ -34,3 +34,10 @@ Local setup instructions will be added once the initial app shell and auth are i
 
 ## License
 TBD
+
+## Configuration
+
+This project uses environment variables for authentication and database access.
+
+Sensitive values (OAuth credentials, database URLs) are managed via the hosting
+provider and are not committed to the repository.
