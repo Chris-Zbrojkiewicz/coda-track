@@ -77,3 +77,48 @@ export async function POST(req: Request) {
     return fail("Database error", 500, message);
   }
 }
+
+export async function GET(req: Request) {
+  const session = await auth();
+  if (!session?.user) return fail("Unauthorized", 401);
+
+  const githubId =
+    (session as any).githubId ??
+    (session as any).token?.githubId ??
+    (session as any).user?.githubId;
+
+  if (!githubId) return fail("Missing GitHub id in session", 401);
+
+  const url = new URL(req.url);
+  const limitParam = url.searchParams.get("limit");
+  let limit = 20;
+  if (limitParam !== null) {
+    const parsed = Number(limitParam);
+    if (!Number.isInteger(parsed) || parsed <= 0)
+      return fail("limit must be a positive integer", 400);
+    limit = Math.min(parsed, 100);
+  }
+
+  try {
+    const userId = await getOrCreateUserIdFromGithub({
+      githubId: String(githubId),
+      email: session.user?.email ?? null,
+      name: session.user?.name ?? null,
+      avatarUrl: session.user?.image ?? null,
+    });
+
+    const rows = await pool.query(
+      `select id, user_id, started_at, ended_at, duration_seconds, note, status
+       from public.practice_sessions
+       where user_id = $1
+       order by started_at desc
+       limit $2`,
+      [userId, limit]
+    );
+
+    return ok({ sessions: rows.rows });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Database error";
+    return fail("Database error", 500, message);
+  }
+}
