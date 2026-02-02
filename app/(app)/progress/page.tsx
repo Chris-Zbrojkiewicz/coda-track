@@ -1,5 +1,6 @@
 import { Page, Section } from "@/components/ui/page";
 import { cookies, headers } from "next/headers";
+import { formatShortDate } from "@/lib/date";
 
 type SessionRow = {
   id: string;
@@ -101,7 +102,7 @@ export default async function ProgressPage() {
         <div className="space-y-2">
           {daily.map((d) => (
             <div key={d.date} className="flex items-center gap-3 text-sm">
-              <div className="w-24 text-xs text-muted-foreground">{d.date}</div>
+              <div className="w-24 text-xs text-muted-foreground">{formatShortDate(d.date)}</div>
 
               <div className="flex-1 h-2 rounded bg-muted overflow-hidden">
                 <div

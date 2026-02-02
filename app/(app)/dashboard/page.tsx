@@ -1,5 +1,6 @@
 import { Page, Section } from "@/components/ui/page";
 import { cookies, headers } from "next/headers";
+import { formatShortDate } from "@/lib/date";
 
 type SummaryData = {
   weekStart: string | null;
@@ -27,12 +28,6 @@ async function getBaseUrl() {
 
 function minutesFromSeconds(seconds: number) {
   return Math.round(seconds / 60);
-}
-
-function formatSessionDate(value: string) {
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return value;
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
 export default async function DashboardPage() {
@@ -103,7 +98,7 @@ export default async function DashboardPage() {
             {sessions.map((s) => (
               <div key={s.id} className="flex items-center justify-between text-sm">
                 <div>
-                  <div className="font-medium">{formatSessionDate(s.started_at)}</div>
+                  <div className="font-medium">{formatShortDate(s.started_at)}</div>
                   <div className="text-xs text-muted-foreground">
                     {s.status === "partial" ? "Partial" : "Completed"}
                     {s.note ? ` • ${s.note}` : ""}
