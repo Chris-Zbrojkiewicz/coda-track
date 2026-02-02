@@ -67,8 +67,7 @@ export default async function ProgressPage() {
   const sessionsJson = await sessionsRes.json().catch(() => null);
 
   if (!sessionsRes.ok || !sessionsJson?.ok) {
-    const message =
-      sessionsJson?.error?.message ?? "Unable to load progress data.";
+    const message = sessionsJson?.error?.message ?? "Unable to load progress data.";
     return (
       <Page title="Progress" description="Your practice over time.">
         <div className="rounded-2xl border bg-card p-6 text-sm text-muted-foreground">
@@ -85,7 +84,7 @@ export default async function ProgressPage() {
       <Page title="Progress" description="Your practice over time.">
         <Section title="Last 14 days">
           <div className="text-sm text-muted-foreground">
-            No practice sessions yet. Log your first session to see progress.
+            No practice sessions yet. Log your first session to unlock your progress chart.
           </div>
         </Section>
       </Page>
@@ -98,7 +97,10 @@ export default async function ProgressPage() {
 
   return (
     <Page title="Progress" description="Your practice over time.">
-      <Section title="Last 14 days" right={<div className="text-xs text-muted-foreground">Minutes</div>}>
+      <Section
+        title="Last 14 days"
+        right={<div className="text-xs text-muted-foreground">Minutes</div>}
+      >
         <div className="space-y-2">
           {daily.map((d) => (
             <div key={d.date} className="flex items-center gap-3 text-sm">
@@ -111,9 +113,7 @@ export default async function ProgressPage() {
                 />
               </div>
 
-              <div className="w-12 text-right text-xs text-muted-foreground">
-                {d.minutes}m
-              </div>
+              <div className="w-12 text-right text-xs text-muted-foreground">{d.minutes}m</div>
             </div>
           ))}
         </div>

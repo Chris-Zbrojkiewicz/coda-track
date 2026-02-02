@@ -46,12 +46,7 @@ export default async function DashboardPage() {
   const summaryJson = await summaryRes.json().catch(() => null);
   const sessionsJson = await sessionsRes.json().catch(() => null);
 
-  if (
-    !summaryRes.ok ||
-    !sessionsRes.ok ||
-    !summaryJson?.ok ||
-    !sessionsJson?.ok
-  ) {
+  if (!summaryRes.ok || !sessionsRes.ok || !summaryJson?.ok || !sessionsJson?.ok) {
     const message =
       summaryJson?.error?.message ??
       sessionsJson?.error?.message ??
@@ -90,9 +85,15 @@ export default async function DashboardPage() {
         </Section>
       </div>
 
-      <Section title="Recent sessions" right={<div className="text-xs text-muted-foreground">Last 5</div>}>
+      <Section
+        title="Recent sessions"
+        right={<div className="text-xs text-muted-foreground">Last 5</div>}
+      >
         {sessions.length === 0 ? (
-          <div className="text-sm text-muted-foreground">No sessions yet.</div>
+          <div className="rounded-xl border border-dashed p-6 text-sm text-muted-foreground">
+            No practice sessions yet.
+            <div className="mt-1">Start a practice session to see your progress here.</div>
+          </div>
         ) : (
           <div className="space-y-3">
             {sessions.map((s) => (
