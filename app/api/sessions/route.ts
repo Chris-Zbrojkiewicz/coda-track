@@ -3,6 +3,8 @@ import { ok, fail } from "@/lib/api";
 import { pool } from "@/lib/db";
 import { getOrCreateUserIdFromGithub } from "@/lib/users";
 
+const MIN_SESSION_SECONDS = 10;
+
 type CreateSessionBody = {
   startedAt: string; // ISO
   endedAt: string; // ISO
@@ -13,8 +15,7 @@ type CreateSessionBody = {
 
 function isIsoDateString(v: unknown): v is string {
   if (typeof v !== "string") return false;
-  const isoPattern =
-    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?(?:Z|[+-]\d{2}:\d{2})$/;
+  const isoPattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?(?:Z|[+-]\d{2}:\d{2})$/;
   return isoPattern.test(v) && !Number.isNaN(Date.parse(v));
 }
 
@@ -42,8 +43,13 @@ export async function POST(req: Request) {
 
   if (!isIsoDateString(startedAt)) return fail("startedAt must be ISO date", 400);
   if (!isIsoDateString(endedAt)) return fail("endedAt must be ISO date", 400);
-  if (!Number.isFinite(durationSeconds) || durationSeconds < 0)
-    return fail("durationSeconds must be a non-negative number", 400);
+  if (
+    typeof durationSeconds !== "number" ||
+    !Number.isFinite(durationSeconds) ||
+    durationSeconds < MIN_SESSION_SECONDS
+  ) {
+    return fail(`durationSeconds must be at least ${MIN_SESSION_SECONDS} seconds`, 400);
+  }
 
   const s = new Date(startedAt);
   const e = new Date(endedAt);
