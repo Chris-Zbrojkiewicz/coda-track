@@ -1,6 +1,7 @@
 import { Page, Section } from "@/components/ui/page";
 import { cookies, headers } from "next/headers";
 import { formatShortDate } from "@/lib/date";
+import { InlineError } from "@/components/ui/inline-error";
 
 type SessionRow = {
   id: string;
@@ -70,9 +71,7 @@ export default async function ProgressPage() {
     const message = sessionsJson?.error?.message ?? "Unable to load progress data.";
     return (
       <Page title="Progress" description="Your practice over time.">
-        <div className="rounded-2xl border bg-card p-6 text-sm text-muted-foreground">
-          {message}
-        </div>
+        <InlineError message={message} retryHref="/dashboard" />
       </Page>
     );
   }

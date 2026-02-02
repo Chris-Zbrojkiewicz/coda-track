@@ -1,6 +1,7 @@
 import { Page, Section } from "@/components/ui/page";
 import { cookies, headers } from "next/headers";
 import { formatShortDate } from "@/lib/date";
+import { InlineError } from "@/components/ui/inline-error";
 
 type SummaryData = {
   weekStart: string | null;
@@ -53,9 +54,7 @@ export default async function DashboardPage() {
       "Unable to load dashboard data.";
     return (
       <Page title="Dashboard" description="Your practice overview for the week.">
-        <div className="rounded-2xl border bg-card p-6 text-sm text-muted-foreground">
-          {message}
-        </div>
+        <InlineError message={message} retryHref="/dashboard" />
       </Page>
     );
   }
