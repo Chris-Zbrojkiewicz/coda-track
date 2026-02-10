@@ -1,5 +1,8 @@
 "use client";
 
+import { useState } from "react";
+import { ToggleLeft, ToggleRight } from "lucide-react";
+
 type Theme = "light" | "dark";
 
 function applyTheme(theme: Theme) {
@@ -9,18 +12,37 @@ function applyTheme(theme: Theme) {
 }
 
 export function ThemeToggle() {
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof document === "undefined") return false;
+    return document.documentElement.classList.contains("dark");
+  });
+
   return (
     <button
       type="button"
       onClick={() => {
-        const isDark = document.documentElement.classList.contains("dark");
-        const nextTheme: Theme = isDark ? "light" : "dark";
+        const nextIsDark = !isDark;
+        const nextTheme: Theme = nextIsDark ? "dark" : "light";
         applyTheme(nextTheme);
+        setIsDark(nextIsDark);
       }}
-      className="rounded-xl border bg-card px-3 py-2 text-sm text-card-foreground hover:bg-muted"
+      className="inline-flex items-center justify-center"
       aria-label="Toggle dark and light mode"
     >
-      Toggle theme
+      <span className="relative block h-[18px] w-[18px]">
+        <ToggleLeft
+          size={28}
+          className={`absolute inset-0 transition-all duration-200 ${
+            isDark ? "translate-x-1 opacity-0" : "translate-x-0 opacity-100"
+          }`}
+        />
+        <ToggleRight
+          size={28}
+          className={`absolute inset-0 transition-all duration-200 ${
+            isDark ? "translate-x-0 opacity-100" : "-translate-x-1 opacity-0"
+          }`}
+        />
+      </span>
     </button>
   );
 }
