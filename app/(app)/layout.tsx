@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { auth } from "@/auth";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard" },
@@ -33,27 +34,29 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           ))}
         </nav>
 
-            <div style={styles.footer}>
-        <div style={styles.userAvatar}>
-          {user?.image ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={user.image}
-              alt=""
-              style={{ width: "100%", height: "100%", borderRadius: 999 }}
-            />
-          ) : null}
-        </div>
+        <ThemeToggle />
 
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={styles.userName}>{user?.name ?? "User"}</div>
-          <div style={styles.userPlan}>{user?.email ?? "Signed in"}</div>
-        </div>
+        <div style={styles.footer}>
+          <div style={styles.userAvatar}>
+            {user?.image ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={user.image}
+                alt=""
+                style={{ width: "100%", height: "100%", borderRadius: 999 }}
+              />
+            ) : null}
+          </div>
 
-      <Link href="/api/auth/signout?callbackUrl=/signin" style={styles.signOutLink}>
-        Sign out
-      </Link>
-      </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={styles.userName}>{user?.name ?? "User"}</div>
+            <div style={styles.userPlan}>{user?.email ?? "Signed in"}</div>
+          </div>
+
+          <Link href="/api/auth/signout?callbackUrl=/signin" style={styles.signOutLink}>
+            Sign out
+          </Link>
+        </div>
       </aside>
 
       <main style={styles.main}>
@@ -68,11 +71,11 @@ const styles: Record<string, React.CSSProperties> = {
     minHeight: "100vh",
     display: "grid",
     gridTemplateColumns: "280px 1fr",
-    color: "#e5e7eb",
+    color: "var(--foreground)",
   },
   sidebar: {
     padding: 16,
-    borderRight: "1px solid rgba(255,255,255,0.08)",
+    borderRight: "1px solid var(--border)",
     display: "flex",
     flexDirection: "column",
     gap: 16,
@@ -83,13 +86,14 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: "center",
     padding: 12,
     borderRadius: 12,
-    background: "rgba(255,255,255,0.04)",
+    background: "var(--card)",
+    border: "1px solid var(--border)",
   },
   logo: {
     width: 36,
     height: 36,
     borderRadius: 12,
-    background: "rgba(99,102,241,0.25)",
+    background: "var(--muted)",
   },
   brandName: { fontWeight: 700, fontSize: 14 },
   brandTagline: { fontSize: 12, opacity: 0.7 },
@@ -99,13 +103,14 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 10,
     textDecoration: "none",
     color: "inherit",
-    background: "rgba(255,255,255,0.03)",
-    border: "1px solid rgba(255,255,255,0.06)",
+    background: "var(--card)",
+    border: "1px solid var(--border)",
   },
   footer: {
     padding: 12,
     borderRadius: 12,
-    background: "rgba(255,255,255,0.04)",
+    background: "var(--card)",
+    border: "1px solid var(--border)",
     display: "flex",
     gap: 10,
     alignItems: "center",
@@ -114,7 +119,7 @@ const styles: Record<string, React.CSSProperties> = {
     width: 32,
     height: 32,
     borderRadius: 999,
-    background: "rgba(255,255,255,0.1)",
+    background: "var(--muted)",
     overflow: "hidden",
     flexShrink: 0,
   },
@@ -124,12 +129,12 @@ const styles: Record<string, React.CSSProperties> = {
   container: { maxWidth: 1200, margin: "0 auto" 
   },
   signOutLink: {
-  padding: "8px 10px",
-  borderRadius: 10,
-  border: "1px solid rgba(255,255,255,0.10)",
-  background: "rgba(255,255,255,0.04)",
-  color: "inherit",
-  textDecoration: "none",
-  whiteSpace: "nowrap",
+    padding: "8px 10px",
+    borderRadius: 10,
+    border: "1px solid var(--border)",
+    background: "var(--muted)",
+    color: "inherit",
+    textDecoration: "none",
+    whiteSpace: "nowrap",
   },
 };
