@@ -1,6 +1,8 @@
 "use client";
 
 import { Page, Section } from "@/components/ui/page";
+import { InlineError } from "@/components/ui/inline-error";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 function formatHMS(totalSeconds: number) {
@@ -14,16 +16,18 @@ function formatHMS(totalSeconds: number) {
 }
 
 export default function PracticeSessionPage() {
-  const [isRunning, setIsRunning] = useState(false);
+  const router = useRouter();
+  const [phase, setPhase] = useState<"idle" | "running" | "paused">("idle");
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const [startedAtUi, setStartedAtUi] = useState<Date | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const startedAtRef = useRef<Date | null>(null);
   const runStartedPerfRef = useRef<number | null>(null);
   const accumulatedMsRef = useRef(0);
 
   useEffect(() => {
-    if (!isRunning) return;
+    if (phase !== "running") return;
 
     // tick ~4x/sec for smooth UI without being too chatty
     const id = window.setInterval(() => {
@@ -35,69 +39,95 @@ export default function PracticeSessionPage() {
     }, 250);
 
     return () => window.clearInterval(id);
-  }, [isRunning]);
+  }, [phase]);
 
   function start() {
-    if (isRunning) return;
+    if (phase === "running") return;
+    setErrorMessage(null);
 
     // First ever start
     if (!startedAtRef.current) {
       const now = new Date();
       startedAtRef.current = now;
-      setStartedAtUi(now);
     }
 
     runStartedPerfRef.current = performance.now();
-    setIsRunning(true);
+    setPhase("running");
   }
 
   function pause() {
-    if (!isRunning) return;
+    if (phase !== "running") return;
 
     const runStart = runStartedPerfRef.current;
     if (runStart != null) {
       accumulatedMsRef.current += performance.now() - runStart;
     }
     runStartedPerfRef.current = null;
-    setIsRunning(false);
+    setPhase("paused");
+    setElapsedSeconds(Math.floor(accumulatedMsRef.current / 1000));
   }
 
   function resume() {
-    if (isRunning) return;
+    if (phase === "running") return;
     if (!startedAtRef.current) {
       // if someone hits resume without start, treat as start
       return start();
     }
+    setErrorMessage(null);
     runStartedPerfRef.current = performance.now();
-    setIsRunning(true);
+    setPhase("running");
   }
 
-  function endSession() {
-    // For #11: no backend. We just "finalize" locally.
-    if (isRunning) pause();
+  async function endSession() {
+    if (isSubmitting) return;
+
+    setErrorMessage(null);
+    if (phase === "running") pause();
 
     const startedAt = startedAtRef.current;
-    const durationSeconds = elapsedSeconds;
-
-    // Reset local timer state (so it’s safe)
-    startedAtRef.current = null;
-    setStartedAtUi(null);
-    runStartedPerfRef.current = null;
-    accumulatedMsRef.current = 0;
-    setElapsedSeconds(0);
-    setIsRunning(false);
-
-    // Temporary UX for V1:
-    // In #13 we’ll POST and redirect. For now show a simple confirmation.
     if (!startedAt) {
-      alert("No session started yet.");
+      setErrorMessage("No session started yet.");
       return;
     }
 
+    const durationSeconds = Math.max(0, Math.floor(accumulatedMsRef.current / 1000));
     const endedAt = new Date();
-    alert(
-      `Session ended.\n\nStarted: ${startedAt.toISOString()}\nEnded: ${endedAt.toISOString()}\nDuration: ${durationSeconds}s`
-    );
+
+    setIsSubmitting(true);
+    try {
+      const res = await fetch("/api/sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          startedAt: startedAt.toISOString(),
+          endedAt: endedAt.toISOString(),
+          durationSeconds,
+          status: "completed",
+        }),
+      });
+
+      const json = await res.json().catch(() => null);
+
+      if (!res.ok || !json?.ok) {
+        const message = json?.error?.message ?? "Unable to save session.";
+        setErrorMessage(message);
+        return;
+      }
+
+      // Reset local timer state once we know it saved.
+      startedAtRef.current = null;
+      runStartedPerfRef.current = null;
+      accumulatedMsRef.current = 0;
+      setElapsedSeconds(0);
+      setPhase("idle");
+
+      router.push("/dashboard");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Unable to save session.";
+      setErrorMessage(message);
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -107,24 +137,27 @@ export default function PracticeSessionPage() {
           <div className="text-5xl font-semibold tabular-nums">{formatHMS(elapsedSeconds)}</div>
 
           <div className="mt-4 flex flex-wrap gap-2">
-            {!startedAtUi ? (
+            {phase === "idle" ? (
               <button
                 onClick={start}
-                className="rounded-xl border px-4 py-2 text-sm hover:bg-muted"
+                disabled={isSubmitting}
+                className="rounded-xl border px-4 py-2 text-sm hover:bg-muted disabled:opacity-50"
               >
                 Start
               </button>
-            ) : isRunning ? (
+            ) : phase === "running" ? (
               <button
                 onClick={pause}
-                className="rounded-xl border px-4 py-2 text-sm hover:bg-muted"
+                disabled={isSubmitting}
+                className="rounded-xl border px-4 py-2 text-sm hover:bg-muted disabled:opacity-50"
               >
                 Pause
               </button>
             ) : (
               <button
                 onClick={resume}
-                className="rounded-xl border px-4 py-2 text-sm hover:bg-muted"
+                disabled={isSubmitting}
+                className="rounded-xl border px-4 py-2 text-sm hover:bg-muted disabled:opacity-50"
               >
                 Resume
               </button>
@@ -132,21 +165,26 @@ export default function PracticeSessionPage() {
 
             <button
               onClick={endSession}
-              className="rounded-xl border px-4 py-2 text-sm hover:bg-muted"
+              disabled={isSubmitting || phase === "idle"}
+              className="rounded-xl border px-4 py-2 text-sm hover:bg-muted disabled:opacity-50"
             >
-              End session
+              {isSubmitting ? "Saving…" : "End session"}
             </button>
           </div>
 
           <div className="mt-3 text-xs text-muted-foreground">
-            {isRunning ? "Running" : startedAtUi ? "Paused" : "Not started"}
+            {phase === "running" ? "Running" : phase === "paused" ? "Paused" : "Not started"}
           </div>
+
+          {errorMessage ? (
+            <div className="mt-4">
+              <InlineError message={errorMessage} />
+            </div>
+          ) : null}
         </Section>
 
         <Section title="Notes (V1 placeholder)">
-          <div className="text-sm text-muted-foreground">
-            We’ll add notes + save flow in Issue #13.
-          </div>
+          <div className="text-sm text-muted-foreground">Notes coming next.</div>
         </Section>
       </div>
     </Page>
