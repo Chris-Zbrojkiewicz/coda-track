@@ -9,6 +9,7 @@ type CreateSessionBody = {
   startedAt: string; // ISO
   endedAt: string; // ISO
   durationSeconds: number;
+  clientSessionId: string; // uuid
   note?: string | null;
   status?: "completed" | "partial";
 };
@@ -17,6 +18,22 @@ function isIsoDateString(v: unknown): v is string {
   if (typeof v !== "string") return false;
   const isoPattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?(?:Z|[+-]\d{2}:\d{2})$/;
   return isoPattern.test(v) && !Number.isNaN(Date.parse(v));
+}
+
+function isUuidString(v: unknown): v is string {
+  if (typeof v !== "string") return false;
+  const uuidPattern =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidPattern.test(v);
+}
+
+function isPgUniqueViolation(
+  err: unknown,
+  constraint: string
+): err is { code: "23505"; constraint?: string } {
+  if (!err || typeof err !== "object") return false;
+  const candidate = err as { code?: string; constraint?: string };
+  return candidate.code === "23505" && candidate.constraint === constraint;
 }
 
 export async function POST(req: Request) {
@@ -29,7 +46,7 @@ export async function POST(req: Request) {
     (session as any).token?.githubId ??
     (session as any).user?.githubId;
 
-  if (!githubId) return fail("Missing GitHub id in session", 401);
+  if (!githubId) return fail("Missing GitHub id in session", 500);
 
   let body: CreateSessionBody;
   try {
@@ -39,17 +56,15 @@ export async function POST(req: Request) {
   }
 
   // Validation
-  const { startedAt, endedAt, durationSeconds, note, status } = body;
+  const { startedAt, endedAt, durationSeconds, clientSessionId, note, status } = body;
 
   if (!isIsoDateString(startedAt)) return fail("startedAt must be ISO date", 400);
   if (!isIsoDateString(endedAt)) return fail("endedAt must be ISO date", 400);
-  if (
-    typeof durationSeconds !== "number" ||
-    !Number.isFinite(durationSeconds) ||
-    durationSeconds < MIN_SESSION_SECONDS
-  ) {
-    return fail(`durationSeconds must be at least ${MIN_SESSION_SECONDS} seconds`, 400);
-  }
+  if (typeof durationSeconds !== "number" || !Number.isFinite(durationSeconds))
+    return fail("durationSeconds must be a finite number", 400);
+  if (durationSeconds < MIN_SESSION_SECONDS)
+    return fail("Session too short (minimum is 10 seconds).", 400);
+  if (!isUuidString(clientSessionId)) return fail("clientSessionId must be a valid UUID", 400);
 
   const s = new Date(startedAt);
   const e = new Date(endedAt);
@@ -71,14 +86,25 @@ export async function POST(req: Request) {
     // 2) Insert practice session
     const inserted = await pool.query(
       `insert into public.practice_sessions
-      (user_id, started_at, ended_at, duration_seconds, note, status)
-     values ($1, $2, $3, $4, $5, $6)
-     returning id, user_id, started_at, ended_at, duration_seconds, note, status`,
-      [userId, s.toISOString(), e.toISOString(), durationSeconds, note ?? null, safeStatus]
+      (user_id, started_at, ended_at, duration_seconds, client_session_id, note, status)
+     values ($1, $2, $3, $4, $5, $6, $7)
+     returning id, user_id, started_at, ended_at, duration_seconds, client_session_id, note, status`,
+      [
+        userId,
+        s.toISOString(),
+        e.toISOString(),
+        durationSeconds,
+        clientSessionId,
+        note ?? null,
+        safeStatus,
+      ]
     );
 
     return ok({ session: inserted.rows[0] }, { status: 201 });
   } catch (err) {
+    if (isPgUniqueViolation(err, "ux_practice_sessions_client_session_id")) {
+      return fail("Session already saved.", 409);
+    }
     const message = err instanceof Error ? err.message : "Database error";
     return fail("Database error", 500, message);
   }
@@ -93,7 +119,7 @@ export async function GET(req: Request) {
     (session as any).token?.githubId ??
     (session as any).user?.githubId;
 
-  if (!githubId) return fail("Missing GitHub id in session", 401);
+  if (!githubId) return fail("Missing GitHub id in session", 500);
 
   const url = new URL(req.url);
   const limitParam = url.searchParams.get("limit");

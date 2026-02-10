@@ -23,6 +23,7 @@ export default function PracticeSessionPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const startedAtRef = useRef<Date | null>(null);
+  const clientSessionIdRef = useRef<string | null>(null);
   const runStartedPerfRef = useRef<number | null>(null);
   const accumulatedMsRef = useRef(0);
 
@@ -41,6 +42,18 @@ export default function PracticeSessionPage() {
     return () => window.clearInterval(id);
   }, [phase]);
 
+  useEffect(() => {
+    if (phase !== "running") return;
+
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [phase]);
+
   function start() {
     if (phase === "running") return;
     setErrorMessage(null);
@@ -49,6 +62,9 @@ export default function PracticeSessionPage() {
     if (!startedAtRef.current) {
       const now = new Date();
       startedAtRef.current = now;
+    }
+    if (!clientSessionIdRef.current) {
+      clientSessionIdRef.current = crypto.randomUUID();
     }
 
     runStartedPerfRef.current = performance.now();
@@ -85,8 +101,13 @@ export default function PracticeSessionPage() {
     if (phase === "running") pause();
 
     const startedAt = startedAtRef.current;
+    const clientSessionId = clientSessionIdRef.current;
     if (!startedAt) {
       setErrorMessage("No session started yet.");
+      return;
+    }
+    if (!clientSessionId) {
+      setErrorMessage("Session id missing. Please start again.");
       return;
     }
 
@@ -103,6 +124,7 @@ export default function PracticeSessionPage() {
           endedAt: endedAt.toISOString(),
           durationSeconds,
           status: "completed",
+          clientSessionId,
         }),
       });
 
@@ -116,6 +138,7 @@ export default function PracticeSessionPage() {
 
       // Reset local timer state once we know it saved.
       startedAtRef.current = null;
+      clientSessionIdRef.current = null;
       runStartedPerfRef.current = null;
       accumulatedMsRef.current = 0;
       setElapsedSeconds(0);
