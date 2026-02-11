@@ -1,8 +1,17 @@
 import Link from "next/link";
 import { auth } from "@/auth";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
-import { HandMetal } from "lucide-react";
+import { HandMetal, LogOut, Settings2 } from "lucide-react";
 import { SidebarNav } from "@/components/app/sidebar-nav";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
@@ -22,33 +31,42 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </div>
 
         <SidebarNav />
-
-        <div style={styles.footer}>
-          <div style={styles.userAvatar}>
-            {user?.image ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={user.image}
-                alt=""
-                style={{ width: "100%", height: "100%", borderRadius: 999 }}
-              />
-            ) : null}
-          </div>
-
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={styles.userName}>{user?.name ?? "User"}</div>
-            <div style={styles.userPlan}>{user?.email ?? "Signed in"}</div>
-          </div>
-
-          <Link href="/api/auth/signout?callbackUrl=/signin" style={styles.signOutLink}>
-            Sign out
-          </Link>
-        </div>
       </aside>
 
       <main style={styles.main}>
         <div style={styles.mainTopBar}>
           <ThemeToggle />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button type="button" style={styles.userMenuTrigger} aria-label="Open account menu">
+                <Avatar className="size-9 border border-border/70">
+                  <AvatarImage src={user?.image ?? undefined} alt={user?.name ?? "User avatar"} />
+                  <AvatarFallback>{(user?.name?.[0] ?? "U").toUpperCase()}</AvatarFallback>
+                </Avatar>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              className="w-52 rounded-lg border-border/70 bg-card/95 p-1.5 shadow-lg shadow-black/10 backdrop-blur-sm"
+            >
+              <DropdownMenuLabel className="px-2 py-1 text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+                Account
+              </DropdownMenuLabel>
+              <DropdownMenuItem asChild>
+                <Link href="/settings">
+                  <Settings2 />
+                  Settings
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link href="/api/auth/signout?callbackUrl=/signin">
+                  <LogOut />
+                  Log out
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
         <div style={styles.container}>{children}</div>
       </main>
@@ -92,39 +110,25 @@ const styles: Record<string, React.CSSProperties> = {
   },
   brandName: { fontWeight: 700, fontSize: 24, fontFamily: "var(--font-jetbrains-mono)" },
   brandTagline: { fontFamily: "var(--font-jetbrains-mono)", fontSize: 10, opacity: 0.7 },
-  footer: {
-    padding: 12,
-    borderRadius: 12,
-    background: "var(--card)",
-    border: "1px solid var(--border)",
-    display: "flex",
-    gap: 10,
-    alignItems: "center",
-  },
-  userAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 999,
-    background: "var(--muted)",
-    overflow: "hidden",
-    flexShrink: 0,
-  },
-  userName: { fontSize: 13, fontWeight: 600 },
-  userPlan: { fontSize: 12, opacity: 0.7 },
   main: { padding: 24 },
   mainTopBar: {
     display: "flex",
+    alignItems: "center",
     justifyContent: "flex-end",
+    gap: 10,
     marginBottom: 8,
   },
   container: { maxWidth: 1200, margin: "0 auto" },
-  signOutLink: {
-    padding: "8px 10px",
-    borderRadius: 10,
+  userMenuTrigger: {
+    width: 42,
+    height: 42,
+    borderRadius: 999,
     border: "1px solid var(--border)",
-    background: "var(--muted)",
+    background: "color-mix(in oklab, var(--card) 92%, transparent)",
     color: "inherit",
-    textDecoration: "none",
-    whiteSpace: "nowrap",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 0,
   },
 };
