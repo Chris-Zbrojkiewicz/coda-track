@@ -1,22 +1,13 @@
 import { Page, Section } from "@/components/ui/page";
 import { cookies, headers } from "next/headers";
-import { formatShortDate } from "@/lib/date";
 import { InlineError } from "@/components/ui/inline-error";
+import { RecentSessions, type SessionRow } from "@/components/dashboard/recent-sessions";
 
 type SummaryData = {
   weekStart: string | null;
   totalSeconds: number;
   sessionsCount: number;
   streakDays: number;
-};
-
-type SessionRow = {
-  id: string;
-  started_at: string;
-  ended_at: string;
-  duration_seconds: number;
-  note: string | null;
-  status: "completed" | "partial";
 };
 
 async function getBaseUrl() {
@@ -84,34 +75,7 @@ export default async function DashboardPage() {
         </Section>
       </div>
 
-      <Section
-        title="Recent sessions"
-        right={<div className="text-xs text-muted-foreground">Last 5</div>}
-      >
-        {sessions.length === 0 ? (
-          <div className="rounded-xl border border-dashed p-6 text-sm text-muted-foreground">
-            No practice sessions yet.
-            <div className="mt-1">Start a practice session to see your progress here.</div>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {sessions.map((s) => (
-              <div key={s.id} className="flex items-center justify-between text-sm">
-                <div>
-                  <div className="font-medium">{formatShortDate(s.started_at)}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {s.status === "partial" ? "Partial" : "Completed"}
-                    {s.note ? ` • ${s.note}` : ""}
-                  </div>
-                </div>
-                <div className="text-muted-foreground">
-                  {minutesFromSeconds(s.duration_seconds)} min
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </Section>
+      <RecentSessions sessions={sessions} />
     </Page>
   );
 }

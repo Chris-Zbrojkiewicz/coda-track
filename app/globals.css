@@ -89,6 +89,19 @@
   --menu-icon-glow: none;
   --menu-text-glow: none;
   --logo-border: #0e3b2f;
+  --session-log-bg: #f6f8f8;
+  --session-log-border: #d7dfde;
+  --session-log-divider: #e4eae8;
+  --session-log-head-bg: #ecefef;
+  --session-log-text-main: #222a30;
+  --session-log-text-dim: #6f7680;
+  --session-log-accent: #14aa72;
+  --session-log-status-bg: rgba(20, 170, 114, 0.12);
+  --session-log-status-border: rgba(20, 170, 114, 0.4);
+  --session-log-status-text: #0f8d5f;
+  --session-log-status-partial-bg: #4f3d42;
+  --session-log-status-partial-border: #743826;
+  --session-log-status-partial-text: #ff9f43;
 }
 
 .dark {
@@ -133,6 +146,19 @@
   --menu-icon-glow: drop-shadow(0 0 4px rgba(61, 240, 143, 0.3));
   --menu-text-glow: 0 0 8px color-mix(in oklab, var(--menu-digital-green) 35%, transparent);
   --logo-border: #0e3b2f;
+  --session-log-bg: #090b10;
+  --session-log-border: #262d35;
+  --session-log-divider: #181d24;
+  --session-log-head-bg: #171b21;
+  --session-log-text-main: #e2e7ec;
+  --session-log-text-dim: #6b7280;
+  --session-log-accent: #2cdb87;
+  --session-log-status-bg: rgba(44, 219, 135, 0.13);
+  --session-log-status-border: rgba(44, 219, 135, 0.52);
+  --session-log-status-text: #39df90;
+  --session-log-status-partial-bg: #4f3d42;
+  --session-log-status-partial-border: #743826;
+  --session-log-status-partial-text: #ff9f43;
 }
 
 @layer base {
@@ -141,6 +167,7 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-jetbrains-sans), "JetBrains Mono", monospace;
   }
 }
 
@@ -186,5 +213,136 @@
 
   .menu-link-active .menu-link-icon {
     filter: var(--menu-icon-glow);
+  }
+
+  .session-log {
+    margin-top: 1.5rem;
+    border-radius: 1rem;
+    border: 1px solid var(--border);
+    background: var(--card);
+    font-family: var(--font-jetbrains-mono), "JetBrains Mono", monospace;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.015);
+  }
+
+  .session-log-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--session-log-divider);
+  }
+
+  .session-log-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.7rem;
+    color: var(--session-log-text-main);
+    letter-spacing: 0.07em;
+    font-size: 1rem;
+    line-height: 1;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  .session-log-title-icon {
+    color: var(--session-log-accent);
+  }
+
+  .session-log-view {
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    color: var(--session-log-text-dim);
+    letter-spacing: 0.08em;
+    font-size: 0.78rem;
+    line-height: 1;
+    text-transform: uppercase;
+    font-family: inherit;
+    padding: 0;
+  }
+
+  .session-log-table-wrap {
+    padding: 1.45rem 1.5rem 1.5rem;
+    overflow-x: auto;
+  }
+
+  .session-log-table {
+    min-width: 760px;
+  }
+
+  .session-log-head,
+  .session-log-row {
+    display: grid;
+    grid-template-columns: 110px 1fr 250px 170px;
+    align-items: center;
+  }
+
+  .session-log-head {
+    height: 3.45rem;
+    border-radius: 0.5rem;
+    background: var(--session-log-head-bg);
+    color: var(--session-log-text-dim);
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0 1.5rem;
+  }
+
+  .session-log-row {
+    min-height: 5.25rem;
+    padding: 0 1.5rem;
+    border-bottom: 1px solid var(--session-log-divider);
+    color: var(--session-log-text-main);
+  }
+
+  .session-log-row:last-child {
+    border-bottom: 0;
+  }
+
+  .session-log-type {
+    color: var(--session-log-text-dim);
+  }
+
+  .session-log-activity {
+    font-size: 0.95rem;
+    letter-spacing: 0.01em;
+  }
+
+  .session-log-date {
+    color: var(--session-log-text-dim);
+    letter-spacing: 0.03em;
+    font-size: 0.82rem;
+  }
+
+  .session-log-status {
+    justify-self: end;
+    border-radius: 0.5rem;
+    border: 1px solid var(--session-log-status-border);
+    background: var(--session-log-status-bg);
+    color: var(--session-log-status-text);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.5rem 0.9rem;
+    line-height: 1;
+  }
+
+  .session-log-status-partial {
+    border-color: var(--session-log-status-partial-border);
+    background: var(--session-log-status-partial-bg);
+    color: var(--session-log-status-partial-text);
+  }
+
+  .session-log-empty {
+    border: 1px dashed var(--session-log-divider);
+    border-radius: 0.75rem;
+    color: var(--session-log-text-dim);
+    text-align: center;
+    padding: 2rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    font-size: 0.8rem;
   }
 }
