@@ -26,10 +26,10 @@ export function ThemeToggle() {
         applyTheme(nextTheme);
         setIsDark(nextIsDark);
       }}
-      className="inline-flex items-center justify-center"
+      className="inline-flex h-7 w-7 items-center justify-center p-0"
       aria-label="Toggle dark and light mode"
     >
-      <span className="relative block h-[18px] w-[18px]">
+      <span className="relative block h-7 w-7">
         <ToggleLeft
           size={28}
           className={`absolute inset-0 transition-all duration-200 ${

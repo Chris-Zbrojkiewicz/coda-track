@@ -1,23 +1,8 @@
 import Link from "next/link";
 import { auth } from "@/auth";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
-import {
-  HandMetal,
-  BarChart3,
-  LayoutDashboard,
-  Settings2,
-  SlidersHorizontal,
-  Timer,
-  type LucideIcon,
-} from "lucide-react";
-
-const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/practice/setup", label: "Session Setup", icon: SlidersHorizontal },
-  { href: "/practice/session", label: "Practice Timer", icon: Timer },
-  { href: "/progress", label: "Progress", icon: BarChart3 },
-  { href: "/settings", label: "Settings", icon: Settings2 },
-] satisfies Array<{ href: string; label: string; icon: LucideIcon }>;
+import { HandMetal } from "lucide-react";
+import { SidebarNav } from "@/components/app/sidebar-nav";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
@@ -28,22 +13,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <aside style={styles.sidebar}>
         <div style={styles.brand}>
           <div style={styles.logo} aria-hidden>
-            <HandMetal size={18} />
+            <HandMetal size={28} />
           </div>
           <div>
             <div style={styles.brandName}>CodaTrack</div>
-            <div style={styles.brandTagline}>Practice, consistently</div>
+            <div style={styles.brandTagline}>VER 2.4.0</div>
           </div>
         </div>
 
-        <nav style={styles.nav}>
-          {navItems.map((item) => (
-            <Link key={item.href} href={item.href} style={styles.navLink}>
-              <item.icon size={18} strokeWidth={2.2} />
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+        <SidebarNav />
 
         <div style={styles.footer}>
           <div style={styles.userAvatar}>
@@ -97,37 +75,23 @@ const styles: Record<string, React.CSSProperties> = {
     gap: 12,
     alignItems: "center",
     padding: 12,
-    borderRadius: 12,
-    background: "var(--card)",
-    border: "1px solid var(--border)",
   },
   logo: {
-    width: 36,
-    height: 36,
+    width: 56,
+    height: 56,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 12,
-    background: "var(--muted)",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: "var(--logo-border)",
+    background:
+      "linear-gradient(135deg, var(--menu-active-bg-start) 0%, var(--menu-active-bg-end) 100%)",
+    color: "var(--menu-digital-green)",
   },
-  brandName: { fontWeight: 700, fontSize: 14 },
-  brandTagline: { fontSize: 12, opacity: 0.7 },
-  nav: { display: "flex", flexDirection: "column", gap: 8, flex: 1 },
-  navLink: {
-    display: "flex",
-    alignItems: "center",
-    gap: 12,
-    padding: "10px 12px",
-    borderRadius: 10,
-    textDecoration: "none",
-    color: "inherit",
-    background: "var(--card)",
-    border: "1px solid var(--border)",
-    textTransform: "uppercase",
-    letterSpacing: "0.04em",
-    fontWeight: 600,
-    fontSize: 12,
-  },
+  brandName: { fontWeight: 700, fontSize: 24, fontFamily: "var(--font-jetbrains-mono)" },
+  brandTagline: { fontFamily: "var(--font-jetbrains-mono)", fontSize: 10, opacity: 0.7 },
   footer: {
     padding: 12,
     borderRadius: 12,
