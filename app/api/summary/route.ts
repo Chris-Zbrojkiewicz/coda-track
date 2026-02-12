@@ -3,17 +3,7 @@ import { ok, fail } from "@/lib/api";
 import { pool } from "@/lib/db";
 import { getOrCreateUserIdFromGithub } from "@/lib/users";
 
-function toDateKey(d: Date) {
-  // YYYY-MM-DD in UTC
-  return d.toISOString().slice(0, 10);
-}
-
-function addDaysUtc(date: Date, days: number) {
-  const d = new Date(date);
-  d.setUTCDate(d.getUTCDate() + days);
-  d.setUTCHours(0, 0, 0, 0);
-  return d;
-}
+const STREAK_LOOKBACK_DAYS = 60;
 
 export async function GET() {
   const session = await auth();
@@ -36,52 +26,68 @@ export async function GET() {
 
     // 1) Weekly totals
     const weekly = await pool.query<{
-      week_start: string;
-      today: string; // YYYY-MM-DD
+      week_start: Date | string;
       total_seconds: number;
       sessions_count: number;
     }>(
       `
       select
-        date_trunc('week', now()) as week_start,
-        current_date::text as today,
+        date_trunc('week', (now() at time zone 'UTC')) as week_start,
         coalesce(sum(duration_seconds), 0)::int as total_seconds,
         count(*)::int as sessions_count
       from public.practice_sessions
       where user_id = $1
-        and started_at >= date_trunc('week', now());
+        and (started_at at time zone 'UTC') >= date_trunc('week', (now() at time zone 'UTC'));
       `,
       [userId]
     );
 
-    const w = weekly.rows[0];
-    const weekStart = w.week_start;
+    const w = weekly.rows[0] ?? {
+      week_start: new Date(),
+      total_seconds: 0,
+      sessions_count: 0,
+    };
+    const weekStart =
+      w.week_start instanceof Date ? w.week_start.toISOString() : new Date(w.week_start).toISOString();
     const totalSeconds = w.total_seconds;
     const sessionsCount = w.sessions_count;
 
-    // 2) Streak calculation (V1)
-    // Definition: consecutive days INCLUDING today where user has >= 1 session.
-    // If the user didn't practice today, streak = 0.
-    const daysRes = await pool.query<{ d: string }>(
+    // 2) Streak calculation (UTC day-bucketing, consecutive from today backwards)
+    const streakRes = await pool.query<{ streak_days: number }>(
       `
-      select distinct (started_at at time zone 'utc')::date as d
-      from public.practice_sessions
-      where user_id = $1
-        and started_at >= (current_date - interval '90 days')
-      order by d desc;
+      with days as (
+        select ((now() at time zone 'UTC')::date - gs)::date as day
+        from generate_series(0, $2::int) as gs
+      ),
+      has_session as (
+        select (started_at at time zone 'UTC')::date as day
+        from public.practice_sessions
+        where user_id = $1
+        group by 1
+      ),
+      timeline as (
+        select
+          d.day,
+          (h.day is not null) as practiced
+        from days d
+        left join has_session h using (day)
+        order by d.day desc
+      ),
+      breaks as (
+        select
+          day,
+          practiced,
+          sum(case when practiced = false then 1 else 0 end) over (order by day desc) as break_group
+        from timeline
+      )
+      select count(*)::int as streak_days
+      from breaks
+      where break_group = 0
+        and practiced = true;
       `,
-      [userId]
+      [userId, STREAK_LOOKBACK_DAYS]
     );
-
-    const practicedDays = new Set(daysRes.rows.map((r) => r.d)); // YYYY-MM-DD
-    const todayUtc = new Date(`${w.today}T00:00:00.000Z`);
-
-    let streakDays = 0;
-    for (let i = 0; i < 365; i++) {
-      const key = toDateKey(addDaysUtc(todayUtc, -i));
-      if (!practicedDays.has(key)) break;
-      streakDays++;
-    }
+    const streakDays = streakRes.rows[0]?.streak_days ?? 0;
 
     return ok({
       weekStart,

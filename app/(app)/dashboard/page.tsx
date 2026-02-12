@@ -1,10 +1,11 @@
 import { Page, Section } from "@/components/ui/page";
 import { cookies, headers } from "next/headers";
+import Link from "next/link";
 import { InlineError } from "@/components/ui/inline-error";
 import { RecentSessions, type SessionRow } from "@/components/dashboard/recent-sessions";
+import { StreakCounter } from "@/components/dashboard/streak-counter";
 
 type SummaryData = {
-  weekStart: string | null;
   totalSeconds: number;
   sessionsCount: number;
   streakDays: number;
@@ -19,7 +20,7 @@ async function getBaseUrl() {
 }
 
 function minutesFromSeconds(seconds: number) {
-  return Math.round(seconds / 60);
+  return Math.floor(seconds / 60);
 }
 
 export default async function DashboardPage() {
@@ -50,29 +51,35 @@ export default async function DashboardPage() {
     );
   }
 
-  const summary: SummaryData = summaryJson.data;
-  const sessions: SessionRow[] = sessionsJson.data.sessions ?? [];
-  const totalMinutes = minutesFromSeconds(summary.totalSeconds ?? 0);
+  const summary = (summaryJson?.data ?? {}) as SummaryData;
+  const sessions: SessionRow[] = sessionsJson?.data?.sessions ?? [];
+  const totalSeconds = summary.totalSeconds ?? 0;
+  const totalMinutes = minutesFromSeconds(totalSeconds);
+  const totalLabel = totalMinutes === 0 && totalSeconds > 0 ? "<1" : String(totalMinutes);
 
   return (
     <Page
       title="Dashboard"
       description="Your practice overview for the week."
-      right={<div className="text-sm text-muted-foreground">Schedule</div>}
+      right={
+        <Link
+          href="/practice/session"
+          className="rounded-xl border px-3 py-2 text-sm hover:bg-muted"
+        >
+          Start practice
+        </Link>
+      }
     >
       <div className="grid gap-6 md:grid-cols-3">
         <Section title="Total practice time">
-          <div className="text-3xl font-semibold">{totalMinutes} min</div>
+          <div className="text-3xl font-semibold">{totalLabel} min</div>
           <div className="mt-2 text-sm text-muted-foreground">This week</div>
         </Section>
         <Section title="Sessions">
           <div className="text-3xl font-semibold">{summary.sessionsCount ?? 0}</div>
           <div className="mt-2 text-sm text-muted-foreground">This week</div>
         </Section>
-        <Section title="Streak">
-          <div className="text-3xl font-semibold">{summary.streakDays ?? 0}</div>
-          <div className="mt-2 text-sm text-muted-foreground">Days</div>
-        </Section>
+        <StreakCounter streakDays={summary.streakDays ?? 0} />
       </div>
 
       <RecentSessions sessions={sessions} />
