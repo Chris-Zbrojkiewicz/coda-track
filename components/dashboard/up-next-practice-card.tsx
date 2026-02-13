@@ -15,7 +15,7 @@ export function UpNextPracticeCard({
   editHref = "/practice/setup",
 }: UpNextPracticeCardProps) {
   return (
-    <section className="rounded-3xl border border-border bg-card p-6 shadow-sm md:p-8">
+    <section className="h-full rounded-3xl border border-border bg-card p-6 shadow-sm md:p-8">
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-4">
           <span className="inline-flex items-center rounded-full bg-[var(--dashboard-accent)] px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-black md:text-sm">
@@ -61,14 +61,6 @@ export function UpNextPracticeCard({
           <PencilLine size={22} className="text-[var(--dashboard-accent)]" />
           Edit Routine
         </Link>
-      </div>
-
-      <div className="mt-5 grid grid-cols-5 gap-2">
-        <div className="h-1.5 rounded-full bg-[var(--dashboard-accent)]" />
-        <div className="h-1.5 rounded-full bg-[var(--dashboard-accent)]" />
-        <div className="h-1.5 rounded-full bg-muted/70" />
-        <div className="h-1.5 rounded-full bg-muted/70" />
-        <div className="h-1.5 rounded-full bg-muted/70" />
       </div>
     </section>
   );
