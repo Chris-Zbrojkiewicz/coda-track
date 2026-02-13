@@ -1,5 +1,6 @@
 import { Page } from "@/components/ui/page";
 import { cookies, headers } from "next/headers";
+import { auth } from "@/auth";
 import { InlineError } from "@/components/ui/inline-error";
 import { RecentSessions, type SessionRow } from "@/components/dashboard/recent-sessions";
 import { StreakCounter } from "@/components/dashboard/streak-counter";
@@ -25,6 +26,8 @@ async function getBaseUrl() {
 }
 
 export default async function DashboardPage() {
+  const session = await auth();
+  const welcomeName = session?.user?.name?.trim() || "there";
   const baseUrl = await getBaseUrl();
   const cookieHeader = (await cookies()).toString();
   const fetchInit: RequestInit = {
@@ -46,7 +49,7 @@ export default async function DashboardPage() {
       sessionsJson?.error?.message ??
       "Unable to load dashboard data.";
     return (
-      <Page title="Dashboard" description="Your practice overview for the week.">
+      <Page title={`Welcome, ${welcomeName}`} description="Your practice overview for the week.">
         <InlineError message={message} retryHref="/dashboard" />
       </Page>
     );
@@ -56,7 +59,7 @@ export default async function DashboardPage() {
   const sessions: SessionRow[] = sessionsJson?.data?.sessions ?? [];
 
   return (
-    <Page title="Dashboard" description="Your practice overview for the week.">
+    <Page title={`Welcome, ${welcomeName}`} description="Let’s build momentum.">
       <div className="grid gap-6 md:grid-cols-3">
         <div className="md:col-span-2">
           <UpNextPracticeCard routineName="Technical Shred V1" estimatedMinutes={25} />
