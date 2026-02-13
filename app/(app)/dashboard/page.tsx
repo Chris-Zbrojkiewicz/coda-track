@@ -1,6 +1,5 @@
 import { Page } from "@/components/ui/page";
 import { cookies, headers } from "next/headers";
-import Link from "next/link";
 import { InlineError } from "@/components/ui/inline-error";
 import { RecentSessions, type SessionRow } from "@/components/dashboard/recent-sessions";
 import { StreakCounter } from "@/components/dashboard/streak-counter";
@@ -8,6 +7,7 @@ import {
   WeeklyPracticeVolume,
   type DailyPractice,
 } from "@/components/dashboard/weekly-practice-volume";
+import { UpNextPracticeCard } from "@/components/dashboard/up-next-practice-card";
 
 type SummaryData = {
   totalSeconds: number;
@@ -56,28 +56,25 @@ export default async function DashboardPage() {
   const sessions: SessionRow[] = sessionsJson?.data?.sessions ?? [];
 
   return (
-    <Page
-      title="Dashboard"
-      description="Your practice overview for the week."
-      right={
-        <Link
-          href="/practice/session"
-          className="rounded-xl border px-3 py-2 text-sm hover:bg-muted"
-        >
-          Start practice
-        </Link>
-      }
-    >
+    <Page title="Dashboard" description="Your practice overview for the week.">
       <div className="grid gap-6 md:grid-cols-3">
-        <WeeklyPracticeVolume
-          totalSeconds={summary.totalSeconds ?? 0}
-          sessionsCount={summary.sessionsCount ?? 0}
-          dailySeconds={summary.dailySeconds ?? []}
-        />
+        <div className="md:col-span-2">
+          <UpNextPracticeCard routineName="Technical Shred V1" estimatedMinutes={25} />
+        </div>
         <StreakCounter streakDays={summary.streakDays ?? 0} />
-      </div>
 
-      <RecentSessions sessions={sessions} />
+        <div className="md:col-span-3">
+          <WeeklyPracticeVolume
+            totalSeconds={summary.totalSeconds ?? 0}
+            sessionsCount={summary.sessionsCount ?? 0}
+            dailySeconds={summary.dailySeconds ?? []}
+          />
+        </div>
+
+        <div className="md:col-span-3">
+          <RecentSessions sessions={sessions} />
+        </div>
+      </div>
     </Page>
   );
 }

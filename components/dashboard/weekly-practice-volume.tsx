@@ -59,8 +59,8 @@ export function WeeklyPracticeVolume({
   const { value, unit } = volumeLabelFromSeconds(totalSeconds);
 
   return (
-    <section className="rounded-3xl border border-border bg-card p-6 md:col-span-2 md:p-8">
-      <header className="flex items-start justify-between gap-6">
+    <section className="rounded-3xl border border-border bg-card p-6 shadow-sm md:p-8">
+      <header className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-sm uppercase tracking-[0.12em] text-muted-foreground">
             Practice Volume
@@ -70,16 +70,18 @@ export function WeeklyPracticeVolume({
           </p>
         </div>
         <div className="flex items-baseline gap-2">
-          <div className="text-4xl font-semibold tabular-nums text-foreground">{value}</div>
-          <div className="text-lg uppercase tracking-[0.08em] text-muted-foreground">{unit}</div>
+          <div className="text-3xl font-semibold tabular-nums text-foreground md:text-4xl">{value}</div>
+          <div className="text-base uppercase tracking-[0.08em] text-muted-foreground md:text-lg">
+            {unit}
+          </div>
         </div>
       </header>
 
-      <div className="mt-7 grid grid-cols-7 gap-3 md:gap-4">
+      <div className="mt-5 grid grid-cols-7 gap-2.5 md:gap-3">
         {bars.map((bar, index) => (
-          <div key={`${bar.label}-${index}`} className="flex flex-col gap-3">
+          <div key={`${bar.label}-${index}`} className="flex flex-col gap-2">
             <div
-              className="relative h-44 overflow-hidden rounded-md bg-[var(--dashboard-panel-track)]"
+              className="relative h-36 overflow-hidden rounded-md bg-[var(--dashboard-panel-track)] md:h-40"
               role="img"
               aria-label={`${bar.minutes} minute${bar.minutes === 1 ? "" : "s"} on ${DAY_NAMES[index]}`}
             >
@@ -93,7 +95,7 @@ export function WeeklyPracticeVolume({
                 aria-hidden="true"
               />
             </div>
-            <div className="text-center text-sm uppercase tracking-[0.08em] text-muted-foreground">
+            <div className="text-center text-xs uppercase tracking-[0.08em] text-muted-foreground md:text-sm">
               {bar.label}
             </div>
           </div>
