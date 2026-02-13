@@ -4,6 +4,8 @@ import { pool } from "@/lib/db";
 import { getOrCreateUserIdFromGithub } from "@/lib/users";
 
 const MIN_SESSION_SECONDS = 10;
+const MAX_SESSION_SECONDS = 8 * 60 * 60;
+const DURATION_TOLERANCE_SECONDS = 5;
 
 type CreateSessionBody = {
   startedAt: string; // ISO
@@ -64,11 +66,16 @@ export async function POST(req: Request) {
     return fail("durationSeconds must be a finite number", 400);
   if (durationSeconds < MIN_SESSION_SECONDS)
     return fail("Session too short (minimum is 10 seconds).", 400);
+  if (durationSeconds > MAX_SESSION_SECONDS)
+    return fail("Session duration exceeds maximum allowed length.", 400);
   if (!isUuidString(clientSessionId)) return fail("clientSessionId must be a valid UUID", 400);
 
   const s = new Date(startedAt);
   const e = new Date(endedAt);
   if (e < s) return fail("endedAt must be >= startedAt", 400);
+  const actualSeconds = Math.floor((e.getTime() - s.getTime()) / 1000);
+  if (Math.abs(actualSeconds - durationSeconds) > DURATION_TOLERANCE_SECONDS)
+    return fail("Duration mismatch.", 400);
 
   const safeStatus = status ?? "completed";
   if (safeStatus !== "completed" && safeStatus !== "partial")
@@ -91,8 +98,8 @@ export async function POST(req: Request) {
      returning id, user_id, started_at, ended_at, duration_seconds, client_session_id, note, status`,
       [
         userId,
-        s.toISOString(),
-        e.toISOString(),
+        s,
+        e,
         durationSeconds,
         clientSessionId,
         note ?? null,

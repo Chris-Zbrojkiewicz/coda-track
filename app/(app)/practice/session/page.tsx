@@ -1,24 +1,24 @@
 "use client";
 
-import { Page, Section } from "@/components/ui/page";
-import { InlineError } from "@/components/ui/inline-error";
+import { Page } from "@/components/ui/page";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { Pause, Play, Square } from "lucide-react";
 
-function formatHMS(totalSeconds: number) {
+function formatMMSS(totalSeconds: number) {
   const s = Math.max(0, Math.floor(totalSeconds));
-  const hh = Math.floor(s / 3600);
-  const mm = Math.floor((s % 3600) / 60);
+  const mm = Math.floor(s / 60);
   const ss = s % 60;
-
-  const two = (n: number) => String(n).padStart(2, "0");
-  return hh > 0 ? `${hh}:${two(mm)}:${two(ss)}` : `${mm}:${two(ss)}`;
+  return `${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}`;
 }
 
 export default function PracticeSessionPage() {
   const router = useRouter();
   const [phase, setPhase] = useState<"idle" | "running" | "paused">("idle");
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [practiceItem, setPracticeItem] = useState("");
+  const [bpm, setBpm] = useState("");
+  const [showPracticeItemError, setShowPracticeItemError] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -43,7 +43,7 @@ export default function PracticeSessionPage() {
   }, [phase]);
 
   useEffect(() => {
-    if (phase !== "running") return;
+    if (phase === "idle") return;
 
     const handler = (e: BeforeUnloadEvent) => {
       e.preventDefault();
@@ -94,10 +94,41 @@ export default function PracticeSessionPage() {
     setPhase("running");
   }
 
+  function handlePlay() {
+    setErrorMessage(null);
+    if (!practiceItem.trim()) {
+      setShowPracticeItemError(true);
+      return;
+    }
+    setShowPracticeItemError(false);
+    if (phase === "idle") {
+      start();
+      return;
+    }
+    resume();
+  }
+
+  function getDurationMs() {
+    const runStart = runStartedPerfRef.current;
+    if (phase === "running" && runStart != null) {
+      return accumulatedMsRef.current + (performance.now() - runStart);
+    }
+    return accumulatedMsRef.current;
+  }
+
   async function endSession() {
     if (isSubmitting) return;
 
     setErrorMessage(null);
+    const item = practiceItem.trim();
+    if (!item) {
+      setErrorMessage("Practice item is required.");
+      return;
+    }
+    const bpmValue = bpm.trim();
+    const note = bpmValue ? `${item} @ ${bpmValue} bpm` : item;
+    const durationSeconds = Math.max(0, Math.floor(getDurationMs() / 1000));
+
     if (phase === "running") pause();
 
     const startedAt = startedAtRef.current;
@@ -111,7 +142,6 @@ export default function PracticeSessionPage() {
       return;
     }
 
-    const durationSeconds = Math.max(0, Math.floor(accumulatedMsRef.current / 1000));
     const endedAt = new Date();
 
     setIsSubmitting(true);
@@ -125,6 +155,7 @@ export default function PracticeSessionPage() {
           durationSeconds,
           status: "completed",
           clientSessionId,
+          note,
         }),
       });
 
@@ -142,6 +173,8 @@ export default function PracticeSessionPage() {
       runStartedPerfRef.current = null;
       accumulatedMsRef.current = 0;
       setElapsedSeconds(0);
+      setPracticeItem("");
+      setBpm("");
       setPhase("idle");
 
       router.push("/dashboard");
@@ -153,63 +186,143 @@ export default function PracticeSessionPage() {
     }
   }
 
-  return (
-    <Page title="Practice" description="Track a focused practice session.">
-      <div className="grid gap-6 md:grid-cols-2">
-        <Section title="Timer">
-          <div className="text-5xl font-semibold tabular-nums">{formatHMS(elapsedSeconds)}</div>
+  const TARGET_SECONDS = 5 * 60;
+  const progressRatio = Math.min(1, elapsedSeconds / TARGET_SECONDS);
+  const ringRadius = 168;
+  const ringCircumference = 2 * Math.PI * ringRadius;
+  const ringOffset = ringCircumference * (1 - progressRatio);
+  const hasPracticeItem = practiceItem.trim().length > 0;
+  const durationSecondsLive = Math.floor(getDurationMs() / 1000);
+  const inlineErrorMessage =
+    showPracticeItemError && !hasPracticeItem ? "Practice item is required." : errorMessage;
 
-          <div className="mt-4 flex flex-wrap gap-2">
-            {phase === "idle" ? (
-              <button
-                onClick={start}
-                disabled={isSubmitting}
-                className="rounded-xl border px-4 py-2 text-sm hover:bg-muted disabled:opacity-50"
-              >
-                Start
-              </button>
-            ) : phase === "running" ? (
-              <button
-                onClick={pause}
-                disabled={isSubmitting}
-                className="rounded-xl border px-4 py-2 text-sm hover:bg-muted disabled:opacity-50"
-              >
-                Pause
-              </button>
-            ) : (
-              <button
-                onClick={resume}
-                disabled={isSubmitting}
-                className="rounded-xl border px-4 py-2 text-sm hover:bg-muted disabled:opacity-50"
-              >
-                Resume
-              </button>
-            )}
+  return (
+    <Page title="Practice Session" description="Track a focused session.">
+      <section className="relative overflow-hidden rounded-4xl border border-border bg-card p-6 md:p-10">
+        <div className="mx-auto max-w-3xl">
+          <div
+            className="relative mx-auto grid h-[360px] w-[360px] place-items-center md:h-[420px] md:w-[420px]"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={TARGET_SECONDS}
+            aria-valuenow={Math.min(TARGET_SECONDS, elapsedSeconds)}
+            aria-label="Session progress"
+          >
+            <svg className="absolute inset-0 h-full w-full -rotate-90" viewBox="0 0 380 380">
+              <circle
+                cx="190"
+                cy="190"
+                r={ringRadius}
+                fill="none"
+                stroke="rgba(255,255,255,0.08)"
+                strokeWidth="10"
+              />
+              <circle
+                cx="190"
+                cy="190"
+                r={ringRadius}
+                fill="none"
+                stroke="var(--dashboard-accent)"
+                strokeWidth="10"
+                strokeLinecap="round"
+                strokeDasharray={ringCircumference}
+                strokeDashoffset={ringOffset}
+                style={{ transition: "stroke-dashoffset 250ms linear" }}
+              />
+            </svg>
+
+            <div className="relative z-[1] text-center">
+              <div className="text-sm uppercase tracking-[0.16em] text-muted-foreground">
+                Time Elapsed
+              </div>
+              <div className="mt-4 text-7xl font-semibold tabular-nums text-foreground md:text-8xl">
+                {formatMMSS(elapsedSeconds)}
+              </div>
+              <div className="mt-3 text-xs uppercase tracking-[0.12em] text-muted-foreground">
+                {phase === "running" ? "Running" : phase === "paused" ? "Paused" : "Ready"}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-8 space-y-3 text-center">
+            <input
+              value={practiceItem}
+              onChange={(event) => {
+                setPracticeItem(event.target.value);
+                if (event.target.value.trim()) {
+                  setShowPracticeItemError(false);
+                }
+                if (errorMessage) {
+                  setErrorMessage(null);
+                }
+              }}
+              placeholder="Enter practice item"
+              required
+              className={[
+                "w-full border-0 bg-transparent text-center text-3xl font-semibold text-foreground placeholder:text-muted-foreground/70 focus:outline-none",
+                showPracticeItemError && !hasPracticeItem
+                  ? "underline decoration-destructive/60 underline-offset-8"
+                  : "",
+              ].join(" ")}
+              aria-label="Practice item"
+            />
+            <input
+              value={bpm}
+              onChange={(event) => {
+                const next = event.target.value.replace(/[^\d]/g, "").slice(0, 3);
+                setBpm(next);
+              }}
+              placeholder="Enter BPM (optional)"
+              inputMode="numeric"
+              pattern="\d*"
+              className="w-full border-0 bg-transparent text-center text-base text-muted-foreground placeholder:text-muted-foreground/70 focus:outline-none"
+              aria-label="Beats per minute"
+            />
+            <div className="h-5">
+              {inlineErrorMessage ? (
+                <p className="text-sm text-destructive" aria-live="polite">
+                  {inlineErrorMessage}
+                </p>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="mx-auto mt-8 flex w-fit items-center gap-4 rounded-3xl border border-border bg-card/40 p-3">
+            <button
+              onClick={handlePlay}
+              disabled={isSubmitting || phase === "running"}
+              className="inline-flex h-14 w-14 cursor-pointer items-center justify-center rounded-2xl bg-[var(--dashboard-accent)] text-black transition-transform duration-200 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40"
+              aria-label={phase === "idle" ? "Start session" : "Resume session"}
+              title={phase === "idle" ? "Start" : "Resume"}
+            >
+              <Play size={24} />
+            </button>
+
+            <button
+              onClick={pause}
+              disabled={isSubmitting || phase !== "running"}
+              className="inline-flex h-14 w-14 cursor-pointer items-center justify-center rounded-2xl border border-border bg-muted/50 text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
+              aria-label="Pause session"
+              title="Pause"
+            >
+              <Pause size={24} />
+            </button>
 
             <button
               onClick={endSession}
-              disabled={isSubmitting || phase === "idle"}
-              className="rounded-xl border px-4 py-2 text-sm hover:bg-muted disabled:opacity-50"
+              disabled={isSubmitting || phase === "idle" || durationSecondsLive < 10}
+              className="inline-flex h-14 w-14 cursor-pointer items-center justify-center rounded-2xl border border-border bg-muted/50 text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
+              aria-label="Stop session"
+              title={
+                durationSecondsLive < 10 ? "Minimum 10 seconds" : isSubmitting ? "Saving…" : "Stop"
+              }
             >
-              {isSubmitting ? "Saving…" : "End session"}
+              <Square size={22} />
             </button>
           </div>
 
-          <div className="mt-3 text-xs text-muted-foreground">
-            {phase === "running" ? "Running" : phase === "paused" ? "Paused" : "Not started"}
-          </div>
-
-          {errorMessage ? (
-            <div className="mt-4">
-              <InlineError message={errorMessage} />
-            </div>
-          ) : null}
-        </Section>
-
-        <Section title="Notes (V1 placeholder)">
-          <div className="text-sm text-muted-foreground">Notes coming next.</div>
-        </Section>
-      </div>
+        </div>
+      </section>
     </Page>
   );
 }
