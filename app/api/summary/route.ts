@@ -14,7 +14,7 @@ export async function GET() {
     (session as any).token?.githubId ??
     (session as any).user?.githubId;
 
-  if (!githubId) return fail("Missing GitHub id in session", 500);
+  if (!githubId) return fail("Unauthorized", 401);
 
   try {
     const userId = await getOrCreateUserIdFromGithub({
@@ -42,15 +42,44 @@ export async function GET() {
       [userId]
     );
 
-    const w = weekly.rows[0] ?? {
-      week_start: new Date(),
-      total_seconds: 0,
-      sessions_count: 0,
-    };
+    const w = weekly.rows[0];
     const weekStart =
       w.week_start instanceof Date ? w.week_start.toISOString() : new Date(w.week_start).toISOString();
     const totalSeconds = w.total_seconds;
     const sessionsCount = w.sessions_count;
+
+    const daily = await pool.query<{
+      day: Date | string;
+      total_seconds: number;
+    }>(
+      `
+      with week_days as (
+        select (date_trunc('week', (now() at time zone 'UTC'))::date + gs)::date as day
+        from generate_series(0, 6) as gs
+      ),
+      practice_totals as (
+        select
+          (started_at at time zone 'UTC')::date as day,
+          coalesce(sum(duration_seconds), 0)::int as total_seconds
+        from public.practice_sessions
+        where user_id = $1
+          and (started_at at time zone 'UTC') >= date_trunc('week', (now() at time zone 'UTC'))
+          and (started_at at time zone 'UTC') < date_trunc('week', (now() at time zone 'UTC')) + interval '7 day'
+        group by 1
+      )
+      select
+        wd.day,
+        coalesce(pt.total_seconds, 0)::int as total_seconds
+      from week_days wd
+      left join practice_totals pt using (day)
+      order by wd.day asc;
+      `,
+      [userId]
+    );
+    const dailySeconds = daily.rows.map((row) => ({
+      day: row.day instanceof Date ? row.day.toISOString() : new Date(row.day).toISOString(),
+      totalSeconds: row.total_seconds,
+    }));
 
     // 2) Streak calculation (UTC day-bucketing, consecutive from today backwards)
     const streakRes = await pool.query<{ streak_days: number }>(
@@ -94,6 +123,8 @@ export async function GET() {
       totalSeconds,
       sessionsCount,
       streakDays,
+      // dailySeconds is always 7 entries, Mon..Sun (UTC), each day aggregated
+      dailySeconds,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Database error";
