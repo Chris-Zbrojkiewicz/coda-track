@@ -12,7 +12,19 @@
 - Frontend + backend: Next.js (App Router)
 - Auth: Auth.js (NextAuth) with server-side session cookies
 - Database: Supabase Postgres (database only; no Supabase Auth/RLS in V1)
-- ORM/migrations: Prisma
+
+## Database Layer
+
+This project uses:
+
+- PostgreSQL
+- node-postgres (`pg`)
+- Raw SQL queries
+- Manual schema management
+
+No ORM is used.
+
+Schema changes are applied via SQL migrations executed manually or via deployment scripts.
 
 **Implication**
 - Authorization is enforced in the application layer:
