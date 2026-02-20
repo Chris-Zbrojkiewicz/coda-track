@@ -1,7 +1,7 @@
 "use client";
 
 import { Page } from "@/components/ui/page";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Pause, Play, Square } from "lucide-react";
 
@@ -14,9 +14,11 @@ function formatMMSS(totalSeconds: number) {
 
 export default function PracticeSessionPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [phase, setPhase] = useState<"idle" | "running" | "paused">("idle");
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [practiceItem, setPracticeItem] = useState("");
+  const [targetSeconds, setTargetSeconds] = useState(5 * 60);
   const [bpm, setBpm] = useState("");
   const [showPracticeItemError, setShowPracticeItemError] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -26,6 +28,25 @@ export default function PracticeSessionPage() {
   const clientSessionIdRef = useRef<string | null>(null);
   const runStartedPerfRef = useRef<number | null>(null);
   const accumulatedMsRef = useRef(0);
+  const didPrefillRef = useRef(false);
+
+  useEffect(() => {
+    if (didPrefillRef.current) return;
+
+    const routineName = searchParams.get("routineName")?.trim() ?? "";
+    const estimatedMinutesParam = searchParams.get("estimatedMinutes");
+    const estimatedMinutes = Number(estimatedMinutesParam);
+
+    if (routineName) {
+      setPracticeItem(routineName);
+    }
+
+    if (Number.isInteger(estimatedMinutes) && estimatedMinutes > 0) {
+      setTargetSeconds(estimatedMinutes * 60);
+    }
+
+    didPrefillRef.current = true;
+  }, [searchParams]);
 
   useEffect(() => {
     if (phase !== "running") return;
@@ -127,7 +148,6 @@ export default function PracticeSessionPage() {
     }
     const bpmValue = bpm.trim();
     const note = bpmValue ? `${item} @ ${bpmValue} bpm` : item;
-    const durationSeconds = Math.max(0, Math.floor(getDurationMs() / 1000));
 
     if (phase === "running") pause();
 
@@ -143,6 +163,7 @@ export default function PracticeSessionPage() {
     }
 
     const endedAt = new Date();
+    const durationSeconds = Math.max(0, Math.floor((endedAt.getTime() - startedAt.getTime()) / 1000));
 
     setIsSubmitting(true);
     try {
@@ -186,11 +207,17 @@ export default function PracticeSessionPage() {
     }
   }
 
-  const TARGET_SECONDS = 5 * 60;
-  const progressRatio = Math.min(1, elapsedSeconds / TARGET_SECONDS);
+  const progressRatio = Math.min(1, elapsedSeconds / targetSeconds);
   const ringRadius = 168;
   const ringCircumference = 2 * Math.PI * ringRadius;
   const ringOffset = ringCircumference * (1 - progressRatio);
+  const remainingSeconds = Math.max(0, targetSeconds - elapsedSeconds);
+  const overtimeSeconds = Math.max(0, elapsedSeconds - targetSeconds);
+  const isOvertime = overtimeSeconds > 0;
+  const primaryClockLabel = isOvertime ? "Overtime" : "Time Remaining";
+  const primaryClockValue = isOvertime
+    ? `+${formatMMSS(overtimeSeconds)}`
+    : formatMMSS(remainingSeconds);
   const hasPracticeItem = practiceItem.trim().length > 0;
   const durationSecondsLive = Math.floor(getDurationMs() / 1000);
   const inlineErrorMessage =
@@ -204,8 +231,8 @@ export default function PracticeSessionPage() {
             className="relative mx-auto grid h-[360px] w-[360px] place-items-center md:h-[420px] md:w-[420px]"
             role="progressbar"
             aria-valuemin={0}
-            aria-valuemax={TARGET_SECONDS}
-            aria-valuenow={Math.min(TARGET_SECONDS, elapsedSeconds)}
+            aria-valuemax={targetSeconds}
+            aria-valuenow={Math.min(targetSeconds, elapsedSeconds)}
             aria-label="Session progress"
           >
             <svg className="absolute inset-0 h-full w-full -rotate-90" viewBox="0 0 380 380">
@@ -233,10 +260,13 @@ export default function PracticeSessionPage() {
 
             <div className="relative z-[1] text-center">
               <div className="text-sm uppercase tracking-[0.16em] text-muted-foreground">
-                Time Elapsed
+                {primaryClockLabel}
               </div>
               <div className="mt-4 text-7xl font-semibold tabular-nums text-foreground md:text-8xl">
-                {formatMMSS(elapsedSeconds)}
+                {primaryClockValue}
+              </div>
+              <div className="mt-2 text-xs uppercase tracking-[0.12em] text-muted-foreground">
+                Elapsed {formatMMSS(elapsedSeconds)}
               </div>
               <div className="mt-3 text-xs uppercase tracking-[0.12em] text-muted-foreground">
                 {phase === "running" ? "Running" : phase === "paused" ? "Paused" : "Ready"}

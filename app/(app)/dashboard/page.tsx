@@ -62,7 +62,7 @@ export default async function DashboardPage() {
     <Page title={`Welcome, ${welcomeName}`} description="Let’s build momentum.">
       <div className="grid gap-6 md:grid-cols-3">
         <div className="h-full md:col-span-2">
-          <UpNextPracticeCard routineName="Technical Shred V1" estimatedMinutes={25} />
+          <UpNextPracticeCard />
         </div>
         <StreakCounter streakDays={summary.streakDays ?? 0} />
 
