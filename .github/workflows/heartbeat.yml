@@ -2,7 +2,7 @@ name: Demo Heartbeat
 
 on:
   schedule:
-    # 2-3 pings/week to keep free-tier Supabase projects warm.
+    # 3 pings/week to keep free-tier Supabase projects warm.
     - cron: "0 13 * * 1,3,5"
   workflow_dispatch:
 
