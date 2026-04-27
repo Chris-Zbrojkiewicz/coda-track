@@ -31,24 +31,16 @@ function minutesFromSeconds(totalSeconds: number) {
   return Math.max(0, Math.floor(totalSeconds / 60));
 }
 
-function dayIndexFromIso(input: string) {
-  const date = new Date(input);
-  if (Number.isNaN(date.getTime())) return -1;
-  const day = date.getUTCDay();
-  return day === 0 ? 6 : day - 1;
-}
-
 export function WeeklyPracticeVolume({
   totalSeconds,
   sessionsCount,
   dailySeconds,
 }: WeeklyPracticeVolumeProps) {
   const minutesPerDay = Array.from({ length: 7 }, () => 0);
-  for (const entry of dailySeconds) {
-    const index = dayIndexFromIso(entry.day);
-    if (index >= 0 && index < 7) {
-      minutesPerDay[index] += minutesFromSeconds(entry.totalSeconds);
-    }
+  // API provides dailySeconds in Monday->Sunday order, already bucketed server-side.
+  for (let index = 0; index < Math.min(7, dailySeconds.length); index += 1) {
+    const entry = dailySeconds[index];
+    minutesPerDay[index] += minutesFromSeconds(entry.totalSeconds);
   }
   const maxMinutes = Math.max(1, ...minutesPerDay);
   const bars = DAY_LABELS.map((label, index) => {

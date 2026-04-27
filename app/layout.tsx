@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import { TimezoneCookieSync } from "@/components/app/timezone-cookie-sync";
 
 const jetbrainsSans = JetBrains_Mono({
   variable: "--font-jetbrains-sans",
@@ -41,6 +42,7 @@ export default function RootLayout({
         />
       </head>
       <body className={`${jetbrainsSans.variable} ${jetbrainsMono.variable} antialiased`}>
+        <TimezoneCookieSync />
         {children}
       </body>
     </html>

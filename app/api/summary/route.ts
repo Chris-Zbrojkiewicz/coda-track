@@ -1,13 +1,18 @@
 import { auth } from "@/auth";
 import { ok, fail } from "@/lib/api";
 import { pool } from "@/lib/db";
+import { resolveUserTimeZone } from "@/lib/timezone";
 import { getOrCreateUserIdFromGithub } from "@/lib/users";
+import { cookies } from "next/headers";
 
 const STREAK_LOOKBACK_DAYS = 60;
+const TIME_ZONE_COOKIE = "ct_tz";
 
 export async function GET() {
   const session = await auth();
   if (!session?.user) return fail("Unauthorized", 401);
+  const cookieStore = await cookies();
+  const userTimeZone = resolveUserTimeZone(cookieStore.get(TIME_ZONE_COOKIE)?.value);
 
   const githubId =
     (session as any).githubId ??
@@ -32,14 +37,14 @@ export async function GET() {
     }>(
       `
       select
-        date_trunc('week', (now() at time zone 'UTC')) as week_start,
+        date_trunc('week', (now() at time zone $2)) as week_start,
         coalesce(sum(duration_seconds), 0)::int as total_seconds,
         count(*)::int as sessions_count
       from public.practice_sessions
       where user_id = $1
-        and (started_at at time zone 'UTC') >= date_trunc('week', (now() at time zone 'UTC'));
+        and (started_at at time zone $2) >= date_trunc('week', (now() at time zone $2));
       `,
-      [userId]
+      [userId, userTimeZone]
     );
 
     const w = weekly.rows[0];
@@ -54,17 +59,17 @@ export async function GET() {
     }>(
       `
       with week_days as (
-        select (date_trunc('week', (now() at time zone 'UTC'))::date + gs)::date as day
+        select (date_trunc('week', (now() at time zone $2))::date + gs)::date as day
         from generate_series(0, 6) as gs
       ),
       practice_totals as (
         select
-          (started_at at time zone 'UTC')::date as day,
+          (started_at at time zone $2)::date as day,
           coalesce(sum(duration_seconds), 0)::int as total_seconds
         from public.practice_sessions
         where user_id = $1
-          and (started_at at time zone 'UTC') >= date_trunc('week', (now() at time zone 'UTC'))
-          and (started_at at time zone 'UTC') < date_trunc('week', (now() at time zone 'UTC')) + interval '7 day'
+          and (started_at at time zone $2) >= date_trunc('week', (now() at time zone $2))
+          and (started_at at time zone $2) < date_trunc('week', (now() at time zone $2)) + interval '7 day'
         group by 1
       )
       select
@@ -74,22 +79,22 @@ export async function GET() {
       left join practice_totals pt using (day)
       order by wd.day asc;
       `,
-      [userId]
+      [userId, userTimeZone]
     );
     const dailySeconds = daily.rows.map((row) => ({
       day: row.day instanceof Date ? row.day.toISOString() : new Date(row.day).toISOString(),
       totalSeconds: row.total_seconds,
     }));
 
-    // 2) Streak calculation (UTC day-bucketing, consecutive from today backwards)
+    // 2) Streak calculation (user-local day-bucketing, consecutive from today backwards)
     const streakRes = await pool.query<{ streak_days: number }>(
       `
       with days as (
-        select ((now() at time zone 'UTC')::date - gs)::date as day
+        select ((now() at time zone $3)::date - gs)::date as day
         from generate_series(0, $2::int) as gs
       ),
       has_session as (
-        select (started_at at time zone 'UTC')::date as day
+        select (started_at at time zone $3)::date as day
         from public.practice_sessions
         where user_id = $1
         group by 1
@@ -114,7 +119,7 @@ export async function GET() {
       where break_group = 0
         and practiced = true;
       `,
-      [userId, STREAK_LOOKBACK_DAYS]
+      [userId, STREAK_LOOKBACK_DAYS, userTimeZone]
     );
     const streakDays = streakRes.rows[0]?.streak_days ?? 0;
 
@@ -123,7 +128,7 @@ export async function GET() {
       totalSeconds,
       sessionsCount,
       streakDays,
-      // dailySeconds is always 7 entries, Mon..Sun (UTC), each day aggregated
+      // dailySeconds is always 7 entries, Mon..Sun in the user's local timezone.
       dailySeconds,
     });
   } catch (err) {

@@ -94,8 +94,7 @@ Compute from PracticeSession. Do not store aggregates initially.
 - Streak counts consecutive practice days up to today (inclusive) if practiced today; otherwise up to yesterday
 
 **Timezone rule (V1)**
-- Use Europe/Copenhagen for day boundaries in V1 (documented, consistent)
-- Future: store a per-user timezone preference
+- Use each user's local timezone for day boundaries in V1 (documented, consistent)
 
 **Why this is documented here**
 - Streak logic and day boundaries are a high-risk source of user mistrust if inconsistent.
