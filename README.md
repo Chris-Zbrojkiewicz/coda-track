@@ -31,6 +31,7 @@ CodaTrack is a guitar practice tracker focused on building consistency through f
 - Weekly summary (total time, session count, practiced days)
 - Streak tracking
 - Dashboard + Progress screens (core insights)
+- V1 is optimized for desktop-first usage, with responsive/mobile support planned for a later iteration
 
 ## Tech Stack
 

@@ -18,59 +18,72 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const user = session?.user;
 
   return (
-    <div style={styles.shell} className="bg-background text-foreground">
-      <aside style={styles.sidebar}>
-        <div style={styles.brand}>
-          <div style={styles.logo} aria-hidden>
-            <HandMetal size={28} />
-          </div>
-          <div>
-            <div style={styles.brandName}>CodaTrack</div>
-            <div style={styles.brandTagline}>VER 2.4.0</div>
-          </div>
+    <>
+      <div className="flex min-h-screen items-center justify-center p-6 text-center md:hidden">
+        <div>
+          <h1 className="text-xl font-semibold">Desktop view recommended</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            CodaTrack V1 is currently optimized for desktop. Mobile support is planned.
+          </p>
         </div>
+      </div>
 
-        <SidebarNav />
-      </aside>
+      <div className="hidden md:block">
+        <div style={styles.shell} className="bg-background text-foreground">
+          <aside style={styles.sidebar}>
+            <div style={styles.brand}>
+              <div style={styles.logo} aria-hidden>
+                <HandMetal size={28} />
+              </div>
+              <div>
+                <div style={styles.brandName}>CodaTrack</div>
+                <div style={styles.brandTagline}>VER 2.4.0</div>
+              </div>
+            </div>
 
-      <main style={styles.main}>
-        <div style={styles.mainTopBar}>
-          <ThemeToggle />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button type="button" style={styles.userMenuTrigger} aria-label="Open account menu">
-                <Avatar className="size-9 border border-border/70">
-                  <AvatarImage src={user?.image ?? undefined} alt={user?.name ?? "User avatar"} />
-                  <AvatarFallback>{(user?.name?.[0] ?? "U").toUpperCase()}</AvatarFallback>
-                </Avatar>
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="end"
-              className="w-52 rounded-lg border-border/70 bg-card/95 p-1.5 shadow-lg shadow-black/10 backdrop-blur-sm"
-            >
-              <DropdownMenuLabel className="px-2 py-1 text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-                Account
-              </DropdownMenuLabel>
-              <DropdownMenuItem asChild>
-                <Link href="/settings">
-                  <Settings2 />
-                  Settings
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link href="/api/auth/signout?callbackUrl=/signin">
-                  <LogOut />
-                  Log out
-                </Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            <SidebarNav />
+          </aside>
+
+          <main style={styles.main}>
+            <div style={styles.mainTopBar}>
+              <ThemeToggle />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button type="button" style={styles.userMenuTrigger} aria-label="Open account menu">
+                    <Avatar className="size-9 border border-border/70">
+                      <AvatarImage src={user?.image ?? undefined} alt={user?.name ?? "User avatar"} />
+                      <AvatarFallback>{(user?.name?.[0] ?? "U").toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  className="w-52 rounded-lg border-border/70 bg-card/95 p-1.5 shadow-lg shadow-black/10 backdrop-blur-sm"
+                >
+                  <DropdownMenuLabel className="px-2 py-1 text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+                    Account
+                  </DropdownMenuLabel>
+                  <DropdownMenuItem asChild>
+                    <Link href="/settings">
+                      <Settings2 />
+                      Settings
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/api/auth/signout?callbackUrl=/signin">
+                      <LogOut />
+                      Log out
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+            <div style={styles.container}>{children}</div>
+          </main>
         </div>
-        <div style={styles.container}>{children}</div>
-      </main>
-    </div>
+      </div>
+    </>
   );
 }
 
