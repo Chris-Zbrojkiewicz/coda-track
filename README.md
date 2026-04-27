@@ -1,10 +1,28 @@
-# CodaTrack (working name)
+# CodaTrack
 
 CodaTrack is a guitar practice tracker focused on building consistency through fast session logging and clear progress visibility. The V1 prioritizes minimal friction (timer + optional note), weekly summaries, and streak tracking.
 
+| Light Mode                             | Dark Mode                            |
+| -------------------------------------- | ------------------------------------ |
+| ![Light Mode](./screenshots/light.png) | ![Dark Mode](./screenshots/dark.png) |
+
+## Live Demo
+
+[https://coda-track.vercel.app/](https://coda-track.vercel.app/)
+
 ## Status
 
-- In active development (V1)
+## Status
+
+- Work in progress (V1) — core flows (auth, session tracking, backend persistence) are implemented. UI and additional features are under active development.
+
+## Highlights
+
+- Full-stack Next.js app with server-side API routes
+- GitHub OAuth authentication via Auth.js
+- Postgres (Supabase) integration with serverless backend
+- Health check endpoint + GitHub Actions heartbeat to prevent Supabase inactivity pause
+- Designed for fast, low-friction session tracking UX
 
 ## V1 Features
 
@@ -14,7 +32,7 @@ CodaTrack is a guitar practice tracker focused on building consistency through f
 - Streak tracking
 - Dashboard + Progress screens (core insights)
 
-## Tech Stack (planned / V1)
+## Tech Stack
 
 - Next.js (App Router)
 - Postgres (Supabase as DB host only)
@@ -33,9 +51,24 @@ Planning and scope are documented in `/docs`:
 - `05-api-contract.md` — API endpoints and payload shapes
 - `06-screen-map.md` — screens mapped to data + endpoints
 
-## How to run (to be completed)
+## Local Setup
 
-Local setup instructions will be added once the initial app shell and auth are implemented.
+```bash
+npm install
+npm run dev
+```
+
+Required environment variables:
+
+- AUTH_SECRET
+- NEXT_PUBLIC_SUPABASE_URL
+- NEXT_PUBLIC_SUPABASE_ANON_KEY
+- DATABASE_URL
+
+(Optional for GitHub auth)
+
+- AUTH_GITHUB_ID
+- AUTH_GITHUB_SECRET
 
 ## Demo uptime / Supabase pause prevention
 
