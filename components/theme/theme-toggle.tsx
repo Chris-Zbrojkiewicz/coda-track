@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useEffect } from "react";
 import { ToggleLeft, ToggleRight } from "lucide-react";
 
 type Theme = "light" | "dark";
@@ -12,10 +13,13 @@ function applyTheme(theme: Theme) {
 }
 
 export function ThemeToggle() {
-  const [isDark, setIsDark] = useState(() => {
-    if (typeof document === "undefined") return false;
-    return document.documentElement.classList.contains("dark");
-  });
+  const [isDark, setIsDark] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    setIsDark(document.documentElement.classList.contains("dark"));
+  }, []);
 
   return (
     <button
@@ -33,13 +37,13 @@ export function ThemeToggle() {
         <ToggleLeft
           size={28}
           className={`absolute inset-0 transition-all duration-200 ${
-            isDark ? "translate-x-1 opacity-0" : "translate-x-0 opacity-100"
+            mounted && isDark ? "translate-x-1 opacity-0" : "translate-x-0 opacity-100"
           }`}
         />
         <ToggleRight
           size={28}
           className={`absolute inset-0 transition-all duration-200 ${
-            isDark ? "translate-x-0 opacity-100" : "-translate-x-1 opacity-0"
+            mounted && isDark ? "translate-x-0 opacity-100" : "-translate-x-1 opacity-0"
           }`}
         />
       </span>
