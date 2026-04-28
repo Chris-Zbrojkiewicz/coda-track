@@ -288,13 +288,13 @@
   }
 
   .session-log-table {
-    min-width: 760px;
+    min-width: 900px;
   }
 
   .session-log-head,
   .session-log-row {
     display: grid;
-    grid-template-columns: 110px 1fr 250px 170px;
+    grid-template-columns: 110px 1fr 230px 120px 170px;
     align-items: center;
   }
 
@@ -321,21 +321,32 @@
   }
 
   .session-log-type {
+    grid-column: 1;
     color: var(--session-log-text-dim);
   }
 
   .session-log-activity {
+    grid-column: 2;
     font-size: 0.95rem;
     letter-spacing: 0.01em;
   }
 
   .session-log-date {
+    grid-column: 3;
+    color: var(--session-log-text-dim);
+    letter-spacing: 0.03em;
+    font-size: 0.82rem;
+  }
+
+  .session-log-duration {
+    grid-column: 4;
     color: var(--session-log-text-dim);
     letter-spacing: 0.03em;
     font-size: 0.82rem;
   }
 
   .session-log-status {
+    grid-column: 5;
     justify-self: end;
     border-radius: 0.5rem;
     border: 1px solid var(--session-log-status-border);
@@ -347,6 +358,26 @@
     text-transform: uppercase;
     padding: 0.5rem 0.9rem;
     line-height: 1;
+  }
+
+  .session-log-col-type {
+    grid-column: 1;
+  }
+
+  .session-log-col-activity {
+    grid-column: 2;
+  }
+
+  .session-log-col-date {
+    grid-column: 3;
+  }
+
+  .session-log-col-duration {
+    grid-column: 4;
+  }
+
+  .session-log-col-status {
+    grid-column: 5;
   }
 
   .session-log-status-partial {

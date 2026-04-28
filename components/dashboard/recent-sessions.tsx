@@ -22,6 +22,18 @@ function formatSessionDate(input: string) {
   return `${year}-${month}-${day} ${hours}:${minutes}`;
 }
 
+function formatDuration(seconds: number) {
+  const totalSeconds = Math.max(0, Math.floor(seconds));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+
+  return `${minutes} min`;
+}
+
 type RecentSessionsProps = {
   sessions: SessionRow[];
   showHeader?: boolean;
@@ -61,10 +73,11 @@ export function RecentSessions({
         ) : (
           <div className="session-log-table">
             <div className="session-log-head">
-              <div>Type</div>
-              <div>Activity</div>
-              <div>Date</div>
-              <div className="text-right">Status</div>
+              <div className="session-log-col-type">Type</div>
+              <div className="session-log-col-activity">Activity</div>
+              <div className="session-log-col-date">Date</div>
+              <div className="session-log-col-duration">Duration</div>
+              <div className="session-log-col-status text-right">Status</div>
             </div>
             {sessions.map((s) => (
               <div key={s.id} className="session-log-row">
@@ -73,6 +86,7 @@ export function RecentSessions({
                 </div>
                 <div className="session-log-activity">{s.note ?? "Practice Session"}</div>
                 <div className="session-log-date">{formatSessionDate(s.started_at)}</div>
+                <div className="session-log-duration">{formatDuration(s.duration_seconds)}</div>
                 <div
                   className={`session-log-status ${
                     s.status === "partial" ? "session-log-status-partial" : ""
